@@ -55,10 +55,6 @@ const hasTriangleAndSquareOfSameColor = compose(
     juxt([getTriangle, getSquare])
 )
 
-// предикаты на количество
-const countGreenEq2 = compose(equals(2), countGreen)
-const countRedEq1 = compose(equals(1), countRed)
-
 // фильтры
 const filterAndCount = filterFn => compose(
     count(filterFn),
@@ -68,6 +64,10 @@ const countGreen = filterAndCount(isGreen)
 const countRed = filterAndCount(isRed)
 const countBlue = filterAndCount(isBlue)
 const countOrange = filterAndCount(isOrange)
+
+// предикаты на количество
+const countGreenEq2 = compose(equals(2), countGreen)
+const countRedEq1 = compose(equals(1), countRed)
 
 // 1. Красная звезда, зеленый квадрат, все остальные белые.
 export const validateFieldN1 = allPass([
