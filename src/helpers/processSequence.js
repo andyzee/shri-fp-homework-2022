@@ -42,56 +42,77 @@ const handleValidationError = R.compose(
     getHandleErrorFn
 )
 
-const changeBaseWrapped = (from, to, number) => api.numbersBaseController({ from, to, number })
+const changeBaseWrapped = (from, to, number) => api.get('https://api.tech/numbers/base', { from, to, number })
 
+const thenResult = R.andThen(R.prop('result'))
 
 const changeBase = R.curry(
     R.pipe(
         changeBaseWrapped,
-        R.prop('result')
+        thenResult,
     )
 )
 
-const processValue = R.pipe(
-    R.modify('value', Math.round),
-    tapLogValue,
-    R.modify('value', changeBase(10, 2)),
-    tapLogValue,
-    R.modify('value', R.length),
-    tapLogValue,
-    R.modify('value', R.mathMod(R.__, 3)),
-    tapLogValue,
+const getAnimalWrapped = (id) => api.get('https://animals.tech/${id}/name', {})
+const getAnimal = R.pipe(
+    getAnimalWrapped,
+    thenResult
 )
 
-const processSequence = R.pipe(
-    R.clone,
-    tapLogValue,
-    R.ifElse(hasValidValue, processValue, handleValidationError)
-)
+const processSequence = ({ value, writeLog, handleError, handleSuccess }) => {
+    const handleValidationError = () => handleError('ValidationError')
+    const tapLog = R.tap(writeLog)
+    const curriedPow = R.curry(Math.pow)
 
-// Привести строку к числу, округлить к ближайшему целому с точностью до единицы, записать в writeLog.
-// C помощью API / numbers / base перевести из 10 - й системы счисления в двоичную, результат записать в writeLog
-// Взять кол - во символов в полученном от API числе записать в writeLog
-// Возвести в квадрат с помощью Javascript записать в writeLog
-// Взять остаток от деления на 3, записать в writeLog
-// C помощью API / animals.tech / id / name получить случайное животное используя полученный остаток в качестве id
-// Завершить цепочку вызовом handleSuccess в который в качестве аргумента положить результат полученный на предыдущем шаге
+    const processValueStep2 = R.pipe(
+        Math.round,
+        tapLog,
+        changeBase(10, 2),
+        R.andThen(tapLog),
+        R.andThen(R.length),
+        R.andThen(tapLog),
+        R.andThen(curriedPow(R.__, 2)),
+        R.andThen(tapLog),
+        R.andThen(R.mathMod(R.__, 3)),
+        R.andThen(tapLog),
+        R.andThen(getAnimal),
+        R.andThen(handleSuccess),
+        R.otherwise(handleError)
+    )
 
-// api.get('https://api.tech/numbers/base', { from: 2, to: 10, number: '01011010101' }).then(({ result }) => {
-//     writeLog(result);
-// });
+    const processValueStep1 = R.pipe(
+        tapLog,
+        R.ifElse(isValidValue, processValueStep2, handleValidationError)
+    )
 
-// wait(2500).then(() => {
-//     writeLog('SecondLog')
+    const result = processValueStep1(value)
+}
 
-//     return wait(1500);
-// }).then(() => {
-//     writeLog('ThirdLog');
+// const processValue = R.pipe(
+//     R.modify('value', Math.round),
+//     tapLogValue,
+//     R.modify('value', changeBase(10, 2)),
+//     tapAndThenValue(console.log),
+// tapLogValue,
+// R.modify('value', R.length),
+// tapLogValue,
+// R.modify('value', R.mathMod(R.__, 3)),
+// tapLogValue,
+// )
 
-//     return wait(400);
-// }).then(() => {
-//     handleSuccess('Done');
-// });
+// const processValue = (data) => {
+//     R.modify('value', Math.round)(data)
+//     tapLogValue(data)
+//     R.modify('value', changeBase(10, 2)(data).then(
+//         tapLogValue
+//     ))
+// }
+
+
+// const processSequence = R.pipe(
+//     tapLogValue,
+//     R.ifElse(hasValidValue, processValue, handleValidationError)
+// )
 
 
 export default processSequence;
