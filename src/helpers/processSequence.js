@@ -53,16 +53,17 @@ const changeBase = R.curry(
     )
 )
 
-const getAnimalWrapped = (id) => api.get('https://animals.tech/${id}/name', {})
+const getAnimalWrapped = (id) => api.get(`https://animals.tech/${id}`, {})
 const getAnimal = R.pipe(
     getAnimalWrapped,
     thenResult
 )
 
+const curriedPow = R.curry(Math.pow)
+
 const processSequence = ({ value, writeLog, handleError, handleSuccess }) => {
     const handleValidationError = () => handleError('ValidationError')
     const tapLog = R.tap(writeLog)
-    const curriedPow = R.curry(Math.pow)
 
     const processValueStep2 = R.pipe(
         Math.round,
@@ -85,7 +86,7 @@ const processSequence = ({ value, writeLog, handleError, handleSuccess }) => {
         R.ifElse(isValidValue, processValueStep2, handleValidationError)
     )
 
-    const result = processValueStep1(value)
+    processValueStep1(value)
 }
 
 // const processValue = R.pipe(
