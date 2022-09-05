@@ -13,7 +13,7 @@
  * Если какие либо функции написаны руками (без использования библиотек) это не является ошибкой
  */
 
-import { allPass, always, apply, complement, compose, count, equals, filter, find, flip, groupBy, groupWith, gte, isNil, juxt, length, lt, lte, map, partialRight, prop, values } from "ramda"
+import { allPass, always, anyPass, apply, ascend, complement, compose, count, equals, filter, find, flip, groupBy, groupWith, gte, isNil, juxt, length, lt, lte, map, partialRight, prop, sort, tap, values, __ } from "ramda"
 
 
 // хелпер для логирования внутри композиций
@@ -69,6 +69,11 @@ const countOrange = filterAndCount(isOrange)
 const countGreenEq2 = compose(equals(2), countGreen)
 const countRedEq1 = compose(equals(1), countRed)
 
+const countGreenGte3 = compose(gte(__, 3), countGreen)
+const countOrangeGte3 = compose(gte(__, 3), countOrange)
+const countBlueGte3 = compose(gte(__, 3), countBlue)
+const countRedGte3 = compose(gte(__, 3), countRed)
+
 // 1. Красная звезда, зеленый квадрат, все остальные белые.
 export const validateFieldN1 = allPass([
     hasRedStar,
@@ -97,14 +102,12 @@ export const validateFieldN4 = allPass([
 ])
 
 // 5. Три фигуры одного любого цвета кроме белого (четыре фигуры одного цвета – это тоже true).
-export const validateFieldN5 = compose(
-    complement(isNil),
-    find(lte(3)),
-    map(length),
-    groupWith(equals),
-    filter(isNotWhite),
-    values
-)
+export const validateFieldN5 = anyPass([
+    countGreenGte3,
+    countBlueGte3,
+    countRedGte3,
+    countOrangeGte3,
+])
 
 // 6. Ровно две зеленые фигуры (одна из зелёных – это треугольник), плюс одна красная. Четвёртая оставшаяся любого доступного цвета, но не нарушающая первые два условия
 

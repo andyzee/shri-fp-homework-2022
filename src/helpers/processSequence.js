@@ -19,28 +19,15 @@ import Api from '../tools/api';
 
 const api = new Api();
 
-const getValue = R.prop('value')
-const getWriteLogFn = R.prop('writeLog')
-const getHandleErrorFn = R.prop('handleError')
-const getHandleSuccessFn = R.prop('handleSuccess')
-
-const logValue = R.compose(
-    R.apply(R.call),
-    R.juxt([getWriteLogFn, getValue])
-)
-const tapLogValue = R.tap(logValue)
+const isShorterThan10 = R.o(R.lt(R.__, 10), R.length)
+const isLongerThan2 = R.o(R.gt(R.__, 2), R.length)
+const isValidNumberString = R.test(/^[0-9]+\.?[0-9]*$/)
 
 const isValidValue = R.allPass([
-    R.o(R.lt(R.__, 10), R.length),
-    R.o(R.gt(R.__, 2), R.length),
-    R.test(/^[0-9]+\.?[0-9]+$/)
+    isShorterThan10,
+    isLongerThan2,
+    isValidNumberString
 ])
-const hasValidValue = R.compose(isValidValue, getValue)
-
-const handleValidationError = R.compose(
-    R.call(R.__, 'ValidationError'),
-    getHandleErrorFn
-)
 
 const changeBaseWrapped = (from, to, number) => api.get('https://api.tech/numbers/base', { from, to, number })
 
@@ -59,25 +46,30 @@ const getAnimal = R.pipe(
     thenResult
 )
 
-const curriedPow = R.curry(Math.pow)
+const takePow2 = x => Math.pow(x, 2)
+const takeMod3 = R.mathMod(R.__, 3)
 
 const processSequence = ({ value, writeLog, handleError, handleSuccess }) => {
     const handleValidationError = () => handleError('ValidationError')
     const tapLog = R.tap(writeLog)
 
+    const processValueStep3 = R.pipeWith(R.andThen, [
+        changeBase(10, 2),
+        tapLog,
+        R.length,
+        tapLog,
+        takePow2,
+        tapLog,
+        takeMod3,
+        tapLog,
+        getAnimal,
+        handleSuccess,
+    ])
+
     const processValueStep2 = R.pipe(
         Math.round,
         tapLog,
-        changeBase(10, 2),
-        R.andThen(tapLog),
-        R.andThen(R.length),
-        R.andThen(tapLog),
-        R.andThen(curriedPow(R.__, 2)),
-        R.andThen(tapLog),
-        R.andThen(R.mathMod(R.__, 3)),
-        R.andThen(tapLog),
-        R.andThen(getAnimal),
-        R.andThen(handleSuccess),
+        processValueStep3,
         R.otherwise(handleError)
     )
 
@@ -88,32 +80,5 @@ const processSequence = ({ value, writeLog, handleError, handleSuccess }) => {
 
     processValueStep1(value)
 }
-
-// const processValue = R.pipe(
-//     R.modify('value', Math.round),
-//     tapLogValue,
-//     R.modify('value', changeBase(10, 2)),
-//     tapAndThenValue(console.log),
-// tapLogValue,
-// R.modify('value', R.length),
-// tapLogValue,
-// R.modify('value', R.mathMod(R.__, 3)),
-// tapLogValue,
-// )
-
-// const processValue = (data) => {
-//     R.modify('value', Math.round)(data)
-//     tapLogValue(data)
-//     R.modify('value', changeBase(10, 2)(data).then(
-//         tapLogValue
-//     ))
-// }
-
-
-// const processSequence = R.pipe(
-//     tapLogValue,
-//     R.ifElse(hasValidValue, processValue, handleValidationError)
-// )
-
 
 export default processSequence;
